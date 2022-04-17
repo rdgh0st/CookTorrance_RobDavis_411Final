@@ -7,7 +7,7 @@ namespace CookTorrance_RobDavis_411Final
     public class Final : Game
     {
         private GraphicsDeviceManager graphics;
-        private SpriteBatch _spriteBatch;
+        private SpriteBatch spriteBatch;
         SpriteFont font;
         Model model; // **** FBX file
         Effect effect;
@@ -21,12 +21,12 @@ namespace CookTorrance_RobDavis_411Final
         Matrix lightProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, 1f, 1f, 100f);
 
         Vector3 cameraPosition, cameraTarget, lightPosition;
-        Vector4 ambientColor = new Vector4(1, 1, 1, 1);
+        Vector4 ambientColor = new Vector4(0.5f, 0.5f, 0.5f, 1);
         float ambientIntensity = 1.0f;
         Vector4 diffuseColor = new Vector4(1, 1, 1, 1);
         float diffuseIntensity = 1.0f;
         Vector4 specularColor = new Vector4(1, 1, 1, 1);
-        float roughness = 0.2f;
+        float roughness = 0.1f;
         float angle, angle2, angleL, angleL2;
         float distance = 20f;
         MouseState preMouse;
@@ -47,9 +47,11 @@ namespace CookTorrance_RobDavis_411Final
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            spriteBatch = new SpriteBatch(GraphicsDevice);
             effect = Content.Load<Effect>("CookTorrance");
-            model = Content.Load<Model>("bunnyUV");
+            model = Content.Load<Model>("Helicopter");
+            texture = Content.Load<Texture2D>("HelicopterTexture");
+            font = Content.Load<SpriteFont>("font");
         }
 
         protected override void Update(GameTime gameTime)
@@ -80,6 +82,42 @@ namespace CookTorrance_RobDavis_411Final
                     Matrix.CreateRotationX(angle2) * Matrix.CreateRotationY(angle));
                 cameraTarget -= ViewRight * (Mouse.GetState().X - preMouse.X) / 10f;
                 cameraTarget += ViewUp * (Mouse.GetState().Y - preMouse.Y) / 10f;
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Keys.R) && !preKey.IsKeyDown(Keys.R))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    roughness += 0.1f;
+                }
+                else
+                {
+                    roughness -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.A) && !preKey.IsKeyDown(Keys.A))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    ambientIntensity += 0.1f;
+                }
+                else
+                {
+                    ambientIntensity -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.D) && !preKey.IsKeyDown(Keys.D))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    diffuseIntensity += 0.1f;
+                }
+                else
+                {
+                    diffuseIntensity -= 0.1f;
+                }
             }
             
             preKey = Keyboard.GetState();
@@ -130,7 +168,8 @@ namespace CookTorrance_RobDavis_411Final
                         effect.Parameters["LightPosition"].SetValue(lightPosition);
                         effect.Parameters["CameraPosition"].SetValue(cameraPosition);
                         effect.Parameters["SpecularColor"].SetValue(specularColor);
-                        effect.Parameters["Shininess"].SetValue(roughness);
+                        effect.Parameters["Roughness"].SetValue(roughness);
+                        effect.Parameters["decalMap"].SetValue(texture);
 
                         pass.Apply(); // send the data to GPU
                         GraphicsDevice.SetVertexBuffer(part.VertexBuffer);
@@ -145,7 +184,22 @@ namespace CookTorrance_RobDavis_411Final
                     }
                 }
             }
-
+            spriteBatch.Begin();
+            spriteBatch.DrawString(font, "Roughness: " + roughness, Vector2.UnitX + Vector2.UnitY * 12, Color.White);
+            spriteBatch.DrawString(font, "Ambient Color: " + ambientColor, Vector2.UnitX + Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, "Ambient Intensity: " + ambientIntensity, Vector2.UnitX + Vector2.UnitY * 48, Color.White);
+            spriteBatch.DrawString(font, "Diffuse Color: " + diffuseColor, Vector2.UnitX + Vector2.UnitY * 66, Color.White);
+            spriteBatch.DrawString(font, "Diffuse Intensity: " + diffuseIntensity, Vector2.UnitX + Vector2.UnitY * 84, Color.White);
+            spriteBatch.DrawString(font, "Light Position: " + lightPosition, Vector2.UnitX + Vector2.UnitY * 102, Color.White);
+            /*
+            spriteBatch.DrawString(font, "Change Particle: 1/2/3/4", Vector2.UnitX + Vector2.UnitY * 120, Color.White);
+            spriteBatch.DrawString(font, "Change Emission: F1/F2/F3, F4 to toggle shape", Vector2.UnitX + Vector2.UnitY * 138, Color.White);
+            spriteBatch.DrawString(font, "Friction: F / Shift and F", Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            spriteBatch.DrawString(font, "Resilience: R / Shift and R", Vector2.UnitX + Vector2.UnitY * 174, Color.White);
+            spriteBatch.DrawString(font, "Age: A / Shift and A", Vector2.UnitX + Vector2.UnitY * 192, Color.White);
+            spriteBatch.DrawString(font, "Help: ?", Vector2.UnitX + Vector2.UnitY * 210, Color.White);
+            */
+            spriteBatch.End();
             base.Draw(gameTime);
         }
     }

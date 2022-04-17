@@ -11,6 +11,16 @@ float AmbientIntensity;
 float4 SpecularColor;
 float4 DiffuseColor;
 float DiffuseIntensity;
+texture decalMap;
+
+sampler tsampler1 = sampler_state {
+	texture = <decalMap>;
+	magfilter = LINEAR;
+	minfilter = LINEAR;
+	mipfilter = LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
 
 struct VertexShaderInput {
     float4 Position: POSITION0;
@@ -20,10 +30,10 @@ struct VertexShaderInput {
 
 struct VertexShaderOutput {
     float2 TexCoord: TEXCOORD0;
-    float4 Position: POSITION;
+    float4 Position: POSITION0;
 	float4 Color: COLOR;
-	float4 Normal: TEXCOORD0;
-	float4 WorldPosition: TEXCOORD1;
+	float4 Normal: NORMAL0;
+	float4 WorldPosition: POSITION1;
 };
 
 VertexShaderOutput CookTorranceVS(VertexShaderInput input) {
@@ -41,13 +51,13 @@ VertexShaderOutput CookTorranceVS(VertexShaderInput input) {
 }
 
 float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
+    
     // potentially get bump normal and UV colors
     float3 N = normalize(input.Normal.xyz);
 	float3 V = normalize(CameraPosition - input.WorldPosition.xyz);
 	float3 L = normalize(LightPosition);
 	float3 R = reflect(-L, N);
 	float3 H = normalize(L + V);
-
     // float3 specular intensity is the cook torrance formula, multiply it with specular color
     float denom = 4 * dot(N, L) * dot(N, V);
 
@@ -73,16 +83,35 @@ float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
 
     float3 numer = GGXDistribution * FresnelSchlick * Geometry;
     float3 specular = numer / denom;
+    specular = specular * SpecularColor;
 
+    float4 texColor = tex2D(tsampler1, input.TexCoord);
 	float4 ambient = AmbientColor * AmbientIntensity;
 	float4 diffuse = DiffuseIntensity * DiffuseColor * max(0, dot(N, L));
-    float4 color = float4(saturate(ambient + diffuse + specular), 1);
-    return color;
+    float4 color = float4(texColor * ambient + diffuse + specular, 1);
+    return color; 
+    /*
+    float4 t = tex2D(tsampler1, input.TexCoord);
+    float vh = dot(V, H);
+    float nh = dot(N, H);
+    float nl = dot(N, L);
+    float nv = dot(N, V);
+    float4 ambi = AmbientColor * AmbientIntensity;
+    float4 diff = DiffuseColor * DiffuseIntensity * saturate(nl);
+    if (nh <= 0 || nl <= 0)
+        return t * ambi + diff;
+    float F = _f0 + (1 - _f0) * (1 - pow(vh, 5));
+    float D = exp((nh * nh - 1) / (_m * _m * nh * nh)) / (_m * _m * pow(nh, 4));
+    float G = min(1, min(2 * nh * nl / vh, 2 * nh * nv / vh));
+    float R = F * D * G / (nv * nl);
+    float spec = _SpecColor * _Sk * R * nl;
+    return t * ambi + diff + spec;
+    */
 }
 
 technique CookTorrance {
 	pass Pass1 {
-		VertexShader = compile vs_4_0 ParticleVertexShader();
-		PixelShader = compile ps_4_0 ParticlePixelShader();
+		VertexShader = compile vs_4_0 CookTorranceVS();
+		PixelShader = compile ps_4_0 CookTorrancePS();
 	}
 }
