@@ -12,6 +12,11 @@ float4 SpecularColor;
 float4 DiffuseColor;
 float DiffuseIntensity;
 texture decalMap;
+/*
+float _Sk = 1;
+float _m = 0.1;
+float _f0 = 0.5;
+*/
 
 sampler tsampler1 = sampler_state {
 	texture = <decalMap>;
@@ -98,8 +103,9 @@ float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
     float nv = dot(N, V);
     float4 ambi = AmbientColor * AmbientIntensity;
     float4 diff = DiffuseColor * DiffuseIntensity * saturate(nl);
-    if (nh <= 0 || nl <= 0)
+    if (nh <= 0 || nl <= 0) {
         return t * ambi + diff;
+    }
     float F = _f0 + (1 - _f0) * (1 - pow(vh, 5));
     float D = exp((nh * nh - 1) / (_m * _m * nh * nh)) / (_m * _m * pow(nh, 4));
     float G = min(1, min(2 * nh * nl / vh, 2 * nh * nv / vh));
