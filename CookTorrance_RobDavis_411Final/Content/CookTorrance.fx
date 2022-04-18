@@ -12,11 +12,10 @@ float4 SpecularColor;
 float4 DiffuseColor;
 float DiffuseIntensity;
 texture decalMap;
-/*
-float _Sk = 1;
-float _m = 0.1;
-float _f0 = 0.5;
-*/
+float SpecularIntensity = 1;
+float4 LightColor;
+float F0;
+
 
 sampler tsampler1 = sampler_state {
 	texture = <decalMap>;
@@ -56,63 +55,56 @@ VertexShaderOutput CookTorranceVS(VertexShaderInput input) {
 }
 
 float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
-    
-    // potentially get bump normal and UV colors
+
     float3 N = normalize(input.Normal.xyz);
 	float3 V = normalize(CameraPosition - input.WorldPosition.xyz);
 	float3 L = normalize(LightPosition);
-	float3 R = reflect(-L, N);
 	float3 H = normalize(L + V);
+    float VdotH = dot(V, H);
+    float NdotH = dot(N, H);
+    float LdotH = dot(L, H);
+    float NdotL = dot(N, L);
+    float NdotV = dot(N, V);
+
+    float4 texColor = tex2D(tsampler1, input.TexCoord);
+	float4 ambient = ambient = AmbientColor * texColor * AmbientIntensity;
+	float4 diffuse = DiffuseIntensity * DiffuseColor * min(max(0, NdotL), 1);
+
+    if (NdotH <= 0 || NdotL <= 0) {
+        return texColor * (ambient + diffuse);
+    }
+	
     // float3 specular intensity is the cook torrance formula, multiply it with specular color
-    float denom = 4 * dot(N, L) * dot(N, V);
+    float denom = 4 * NdotL * NdotV;
 
     // GGXDistribution
-    float alphaSquare = pow(input.Color.a, 2);
+    float alphaSquare = pow(Roughness, 2);
     float pi = 3.14159265358979323846;
-    float denomGGX = pi * pow((pow(dot(N, H), 2) * (alphaSquare - 1)) + 1, 2);
+    float denomGGX = pi * pow((pow(NdotH, 2) * (alphaSquare - 1)) + 1, 2);
     float GGXDistribution = alphaSquare / denomGGX;
 
     // FresnelSchlick
-    float M = pow(min(0, max(1, 1 - dot(L, H))), 5);
-    float3 FresnelSchlick = SpecularColor.rgb + (1 - SpecularColor.rgb) * M;
+    float M = pow(min(0, max(1, 1 - VdotH)), 5);
+    float FresnelSchlick = F0 + (1 - F0) * M;
 
     // Geometry
     float K = pow((Roughness + 1), 2) / 8;
-    float denomG1L = (dot(N, L) * (1 - K)) + K;
-    float G1L = dot(N, L) / denomG1L;
+    float denomG1L = (NdotL * (1 - K)) + K;
+    float G1L = NdotL / denomG1L;
 
-    float denomG1V = (dot(N, V) * (1 - K)) + K;
-    float G1V = dot(N, V) / denomG1V;
+    float denomG1V = (NdotV * (1 - K)) + K;
+    float G1V = NdotV / denomG1V;
 
     float Geometry = G1L * G1V;
 
-    float3 numer = GGXDistribution * FresnelSchlick * Geometry;
-    float3 specular = numer / denom;
-    specular = specular * SpecularColor;
+    // Apply Cook-Torrance Formula and find final Specular value
+    float numer = GGXDistribution * FresnelSchlick * Geometry;
+    float cookTorranceValue = numer / denom;
+    float4 finalSpecular = cookTorranceValue * SpecularColor * SpecularIntensity * NdotL;
 
-    float4 texColor = tex2D(tsampler1, input.TexCoord);
-	float4 ambient = AmbientColor * AmbientIntensity;
-	float4 diffuse = DiffuseIntensity * DiffuseColor * max(0, dot(N, L));
-    float4 color = float4(texColor * ambient + diffuse + specular, 1);
-    return color; 
-    /*
-    float4 t = tex2D(tsampler1, input.TexCoord);
-    float vh = dot(V, H);
-    float nh = dot(N, H);
-    float nl = dot(N, L);
-    float nv = dot(N, V);
-    float4 ambi = AmbientColor * AmbientIntensity;
-    float4 diff = DiffuseColor * DiffuseIntensity * saturate(nl);
-    if (nh <= 0 || nl <= 0) {
-        return t * ambi + diff;
-    }
-    float F = _f0 + (1 - _f0) * (1 - pow(vh, 5));
-    float D = exp((nh * nh - 1) / (_m * _m * nh * nh)) / (_m * _m * pow(nh, 4));
-    float G = min(1, min(2 * nh * nl / vh, 2 * nh * nv / vh));
-    float R = F * D * G / (nv * nl);
-    float spec = _SpecColor * _Sk * R * nl;
-    return t * ambi + diff + spec;
-    */
+    // integrate all color values into final return color
+    float4 color = LightColor * saturate(NdotL) * ((texColor * diffuse) + finalSpecular) + ambient;
+    return color;
 }
 
 technique CookTorrance {

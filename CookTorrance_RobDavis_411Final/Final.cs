@@ -21,12 +21,14 @@ namespace CookTorrance_RobDavis_411Final
         Matrix lightProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, 1f, 1f, 100f);
 
         Vector3 cameraPosition, cameraTarget, lightPosition;
-        Vector4 ambientColor = new Vector4(0.5f, 0.5f, 0.5f, 1);
-        float ambientIntensity = 1.0f;
+        Vector4 ambientColor = new Vector4(0.25f, 0.25f, 0.25f, 1);
+        float ambientIntensity = 1f;
         Vector4 diffuseColor = new Vector4(1, 1, 1, 1);
-        float diffuseIntensity = 1.0f;
+        float diffuseIntensity = 1f;
         Vector4 specularColor = new Vector4(1, 1, 1, 1);
         float roughness = 0.1f;
+        Vector4 lightColor = new Vector4(1, 1, 1, 1);
+        float F0 = 1;
         float angle, angle2, angleL, angleL2;
         float distance = 20f;
         MouseState preMouse;
@@ -88,11 +90,11 @@ namespace CookTorrance_RobDavis_411Final
             {
                 if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
                 {
-                    roughness += 0.1f;
+                    roughness += 0.05f;
                 }
                 else
                 {
-                    roughness -= 0.1f;
+                    roughness -= 0.05f;
                 }
             }
             
@@ -117,6 +119,54 @@ namespace CookTorrance_RobDavis_411Final
                 else
                 {
                     diffuseIntensity -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.F1) && !preKey.IsKeyDown(Keys.F1))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    lightColor.X += 0.1f;
+                }
+                else
+                {
+                    lightColor.X -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.F2) && !preKey.IsKeyDown(Keys.F2))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    lightColor.Y += 0.1f;
+                }
+                else
+                {
+                    lightColor.Y -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.F3) && !preKey.IsKeyDown(Keys.F3))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    lightColor.Z += 0.1f;
+                }
+                else
+                {
+                    lightColor.Z -= 0.1f;
+                }
+            }
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.F) && !preKey.IsKeyDown(Keys.F))
+            {
+                if (!Keyboard.GetState().IsKeyDown(Keys.LeftShift))
+                {
+                    F0 += 0.1f;
+                }
+                else
+                {
+                    F0 -= 0.1f;
                 }
             }
             
@@ -170,6 +220,8 @@ namespace CookTorrance_RobDavis_411Final
                         effect.Parameters["SpecularColor"].SetValue(specularColor);
                         effect.Parameters["Roughness"].SetValue(roughness);
                         effect.Parameters["decalMap"].SetValue(texture);
+                        effect.Parameters["LightColor"].SetValue(lightColor);
+                        effect.Parameters["F0"].SetValue(F0);
 
                         pass.Apply(); // send the data to GPU
                         GraphicsDevice.SetVertexBuffer(part.VertexBuffer);
@@ -191,10 +243,10 @@ namespace CookTorrance_RobDavis_411Final
             spriteBatch.DrawString(font, "Diffuse Color: " + diffuseColor, Vector2.UnitX + Vector2.UnitY * 66, Color.White);
             spriteBatch.DrawString(font, "Diffuse Intensity: " + diffuseIntensity, Vector2.UnitX + Vector2.UnitY * 84, Color.White);
             spriteBatch.DrawString(font, "Light Position: " + lightPosition, Vector2.UnitX + Vector2.UnitY * 102, Color.White);
+            spriteBatch.DrawString(font, "Light Color: " + lightColor, Vector2.UnitX + Vector2.UnitY * 120, Color.White);
+            spriteBatch.DrawString(font, "Light Size: " + F0, Vector2.UnitX + Vector2.UnitY * 138, Color.White);
             /*
-            spriteBatch.DrawString(font, "Change Particle: 1/2/3/4", Vector2.UnitX + Vector2.UnitY * 120, Color.White);
-            spriteBatch.DrawString(font, "Change Emission: F1/F2/F3, F4 to toggle shape", Vector2.UnitX + Vector2.UnitY * 138, Color.White);
-            spriteBatch.DrawString(font, "Friction: F / Shift and F", Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            spriteBatch.DrawString(font, "Geometry: " + effect.Parameters["Geometry"].GetValueSingle(), Vector2.UnitX + Vector2.UnitY * 156, Color.White);
             spriteBatch.DrawString(font, "Resilience: R / Shift and R", Vector2.UnitX + Vector2.UnitY * 174, Color.White);
             spriteBatch.DrawString(font, "Age: A / Shift and A", Vector2.UnitX + Vector2.UnitY * 192, Color.White);
             spriteBatch.DrawString(font, "Help: ?", Vector2.UnitX + Vector2.UnitY * 210, Color.White);
