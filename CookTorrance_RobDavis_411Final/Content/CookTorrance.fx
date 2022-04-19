@@ -54,7 +54,7 @@ VertexShaderOutput CookTorranceVS(VertexShaderInput input) {
 	return output;
 }
 
-float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
+float4 CookTorrancePSTexture(VertexShaderOutput input) : COLOR {
 
     float3 N = normalize(input.Normal.xyz);
 	float3 V = normalize(CameraPosition - input.WorldPosition.xyz);
@@ -107,9 +107,68 @@ float4 CookTorrancePS(VertexShaderOutput input) : COLOR {
     return color;
 }
 
-technique CookTorrance {
+float4 CookTorrancePSNoTexture(VertexShaderOutput input) : COLOR {
+
+    float3 N = normalize(input.Normal.xyz);
+	float3 V = normalize(CameraPosition - input.WorldPosition.xyz);
+	float3 L = normalize(LightPosition);
+	float3 H = normalize(L + V);
+    float VdotH = dot(V, H);
+    float NdotH = dot(N, H);
+    float LdotH = dot(L, H);
+    float NdotL = dot(N, L);
+    float NdotV = dot(N, V);
+
+	float4 ambient = ambient = AmbientColor * AmbientIntensity;
+	float4 diffuse = DiffuseIntensity * DiffuseColor * min(max(0, NdotL), 1);
+
+    if (NdotH <= 0 || NdotL <= 0) {
+        return (ambient + diffuse);
+    }
+	
+    // float3 specular intensity is the cook torrance formula, multiply it with specular color
+    float denom = 4 * NdotL * NdotV;
+
+    // GGXDistribution
+    float alphaSquare = pow(Roughness, 2);
+    float pi = 3.14159265358979323846;
+    float denomGGX = pi * pow((pow(NdotH, 2) * (alphaSquare - 1)) + 1, 2);
+    float GGXDistribution = alphaSquare / denomGGX;
+
+    // FresnelSchlick
+    float M = pow(min(0, max(1, 1 - VdotH)), 5);
+    float FresnelSchlick = F0 + (1 - F0) * M;
+
+    // Geometry
+    float K = pow((Roughness + 1), 2) / 8;
+    float denomG1L = (NdotL * (1 - K)) + K;
+    float G1L = NdotL / denomG1L;
+
+    float denomG1V = (NdotV * (1 - K)) + K;
+    float G1V = NdotV / denomG1V;
+
+    float Geometry = G1L * G1V;
+
+    // Apply Cook-Torrance Formula and find final Specular value
+    float numer = GGXDistribution * FresnelSchlick * Geometry;
+    float cookTorranceValue = numer / denom;
+    float4 finalSpecular = cookTorranceValue * SpecularColor * SpecularIntensity * NdotL;
+
+    // integrate all color values into final return color
+    float4 color = LightColor * saturate(NdotL) * ((diffuse) + finalSpecular) + ambient;
+    return color;
+}
+
+technique CookTorranceTexture {
 	pass Pass1 {
 		VertexShader = compile vs_4_0 CookTorranceVS();
-		PixelShader = compile ps_4_0 CookTorrancePS();
+		PixelShader = compile ps_4_0 CookTorrancePSTexture();
+	}
+}
+
+technique CookTorranceNoTexture {
+	pass Pass1 {
+		VertexShader = compile vs_4_0 CookTorranceVS();
+		PixelShader = compile ps_4_0 CookTorrancePSNoTexture();
 	}
 }

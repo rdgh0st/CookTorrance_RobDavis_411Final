@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -9,7 +11,7 @@ namespace CookTorrance_RobDavis_411Final
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         SpriteFont font;
-        Model model; // **** FBX file
+        Model activeModel, modelHeli, modelBunny; // **** FBX file
         Effect effect;
         Texture2D texture;
 
@@ -51,9 +53,11 @@ namespace CookTorrance_RobDavis_411Final
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             effect = Content.Load<Effect>("CookTorrance");
-            model = Content.Load<Model>("Helicopter");
+            modelHeli = Content.Load<Model>("Helicopter");
+            modelBunny = Content.Load<Model>("bunnyUV");
             texture = Content.Load<Texture2D>("HelicopterTexture");
             font = Content.Load<SpriteFont>("font");
+            activeModel = modelBunny;
         }
 
         protected override void Update(GameTime gameTime)
@@ -170,6 +174,18 @@ namespace CookTorrance_RobDavis_411Final
                 }
             }
             
+            if (Keyboard.GetState().IsKeyDown(Keys.M) && !preKey.IsKeyDown(Keys.M))
+            {
+                if (activeModel == modelBunny)
+                {
+                    activeModel = modelHeli;
+                }
+                else
+                {
+                    activeModel = modelBunny;
+                }
+            }
+            
             preKey = Keyboard.GetState();
             preMouse = Mouse.GetState();
             // Update Camera
@@ -195,11 +211,18 @@ namespace CookTorrance_RobDavis_411Final
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.DepthStencilState = new DepthStencilState();
 
-            // effect.CurrentTechnique = effect.Techniques[0];
-            effect.CurrentTechnique = effect.Techniques[0];
+            if (activeModel == modelHeli)
+            {
+                effect.CurrentTechnique = effect.Techniques[0];
+            }
+            else
+            {
+                effect.CurrentTechnique = effect.Techniques[1];
+            }
+
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {
-                foreach (ModelMesh mesh in model.Meshes)
+                foreach (ModelMesh mesh in activeModel.Meshes)
                 {
                     foreach (ModelMeshPart part in mesh.MeshParts)
                     {
@@ -219,9 +242,12 @@ namespace CookTorrance_RobDavis_411Final
                         effect.Parameters["CameraPosition"].SetValue(cameraPosition);
                         effect.Parameters["SpecularColor"].SetValue(specularColor);
                         effect.Parameters["Roughness"].SetValue(roughness);
-                        effect.Parameters["decalMap"].SetValue(texture);
                         effect.Parameters["LightColor"].SetValue(lightColor);
                         effect.Parameters["F0"].SetValue(F0);
+                        if (activeModel == modelHeli)
+                        {
+                            effect.Parameters["decalMap"].SetValue(texture);
+                        }
 
                         pass.Apply(); // send the data to GPU
                         GraphicsDevice.SetVertexBuffer(part.VertexBuffer);
@@ -245,8 +271,18 @@ namespace CookTorrance_RobDavis_411Final
             spriteBatch.DrawString(font, "Light Position: " + lightPosition, Vector2.UnitX + Vector2.UnitY * 102, Color.White);
             spriteBatch.DrawString(font, "Light Color: " + lightColor, Vector2.UnitX + Vector2.UnitY * 120, Color.White);
             spriteBatch.DrawString(font, "Light Size: " + F0, Vector2.UnitX + Vector2.UnitY * 138, Color.White);
+            if (activeModel == modelBunny)
+            {
+                spriteBatch.DrawString(font, "Current Model: Bunny (M to toggle)",
+                    Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            }
+            else
+            {
+                spriteBatch.DrawString(font, "Current Model: Helicopter",
+                    Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            }
+
             /*
-            spriteBatch.DrawString(font, "Geometry: " + effect.Parameters["Geometry"].GetValueSingle(), Vector2.UnitX + Vector2.UnitY * 156, Color.White);
             spriteBatch.DrawString(font, "Resilience: R / Shift and R", Vector2.UnitX + Vector2.UnitY * 174, Color.White);
             spriteBatch.DrawString(font, "Age: A / Shift and A", Vector2.UnitX + Vector2.UnitY * 192, Color.White);
             spriteBatch.DrawString(font, "Help: ?", Vector2.UnitX + Vector2.UnitY * 210, Color.White);
