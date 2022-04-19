@@ -11,7 +11,7 @@ namespace CookTorrance_RobDavis_411Final
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         SpriteFont font;
-        Model activeModel, modelHeli, modelBunny; // **** FBX file
+        Model activeModel, modelHeli, modelBunny, modelTeacup, modelTorus; // **** FBX file
         Effect effect;
         Texture2D texture;
 
@@ -55,6 +55,8 @@ namespace CookTorrance_RobDavis_411Final
             effect = Content.Load<Effect>("CookTorrance");
             modelHeli = Content.Load<Model>("Helicopter");
             modelBunny = Content.Load<Model>("bunnyUV");
+            modelTeacup = Content.Load<Model>("teapot");
+            modelTorus = Content.Load<Model>("Torus");
             texture = Content.Load<Texture2D>("HelicopterTexture");
             font = Content.Load<SpriteFont>("font");
             activeModel = modelBunny;
@@ -174,16 +176,18 @@ namespace CookTorrance_RobDavis_411Final
                 }
             }
             
-            if (Keyboard.GetState().IsKeyDown(Keys.M) && !preKey.IsKeyDown(Keys.M))
+            if (Keyboard.GetState().IsKeyDown(Keys.D1) && !preKey.IsKeyDown(Keys.D1))
             {
-                if (activeModel == modelBunny)
-                {
-                    activeModel = modelHeli;
-                }
-                else
-                {
-                    activeModel = modelBunny;
-                }
+                activeModel = modelBunny;
+            } else if (Keyboard.GetState().IsKeyDown(Keys.D2) && !preKey.IsKeyDown(Keys.D2))
+            {
+                activeModel = modelTeacup;
+            } else if (Keyboard.GetState().IsKeyDown(Keys.D3) && !preKey.IsKeyDown(Keys.D3))
+            {
+                activeModel = modelTorus;
+            } else if (Keyboard.GetState().IsKeyDown(Keys.D4) && !preKey.IsKeyDown(Keys.D4))
+            {
+                activeModel = modelHeli;
             }
             
             preKey = Keyboard.GetState();
@@ -273,12 +277,20 @@ namespace CookTorrance_RobDavis_411Final
             spriteBatch.DrawString(font, "Light Size: " + F0, Vector2.UnitX + Vector2.UnitY * 138, Color.White);
             if (activeModel == modelBunny)
             {
-                spriteBatch.DrawString(font, "Current Model: Bunny (M to toggle)",
+                spriteBatch.DrawString(font, "Current Model: Bunny",
                     Vector2.UnitX + Vector2.UnitY * 156, Color.White);
             }
-            else
+            else if (activeModel == modelHeli)
             {
                 spriteBatch.DrawString(font, "Current Model: Helicopter",
+                    Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            } else if (activeModel == modelTeacup)
+            {
+                spriteBatch.DrawString(font, "Current Model: Teacup",
+                    Vector2.UnitX + Vector2.UnitY * 156, Color.White);
+            } else if (activeModel == modelTorus)
+            {
+                spriteBatch.DrawString(font, "Current Model: Torus",
                     Vector2.UnitX + Vector2.UnitY * 156, Color.White);
             }
 
