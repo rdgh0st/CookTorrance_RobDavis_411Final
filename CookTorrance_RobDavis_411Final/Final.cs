@@ -11,7 +11,7 @@ namespace CookTorrance_RobDavis_411Final
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         SpriteFont font;
-        Model activeModel, modelHeli, modelBunny, modelTeacup, modelTorus; // **** FBX file
+        Model activeModel, modelHeli, modelBunny, modelTeacup, modelSphere; // **** FBX file
         Effect effect;
         Texture2D texture;
 
@@ -24,9 +24,9 @@ namespace CookTorrance_RobDavis_411Final
 
         Vector3 cameraPosition, cameraTarget, lightPosition;
         Vector4 ambientColor = new Vector4(0.25f, 0.25f, 0.25f, 1);
-        float ambientIntensity = 1f;
+        float ambientIntensity = 0.5f;
         Vector4 diffuseColor = new Vector4(1, 1, 1, 1);
-        float diffuseIntensity = 1f;
+        float diffuseIntensity = 0.5f;
         Vector4 specularColor = new Vector4(1, 1, 1, 1);
         float roughness = 0.1f;
         Vector4 lightColor = new Vector4(1, 1, 1, 1);
@@ -35,6 +35,7 @@ namespace CookTorrance_RobDavis_411Final
         float distance = 20f;
         MouseState preMouse;
         KeyboardState preKey;
+        bool showHelp = true;
 
         public Final()
         {
@@ -56,10 +57,10 @@ namespace CookTorrance_RobDavis_411Final
             modelHeli = Content.Load<Model>("Helicopter");
             modelBunny = Content.Load<Model>("bunnyUV");
             modelTeacup = Content.Load<Model>("teapot");
-            modelTorus = Content.Load<Model>("Torus");
+            modelSphere = Content.Load<Model>("sphere");
             texture = Content.Load<Texture2D>("HelicopterTexture");
             font = Content.Load<SpriteFont>("font");
-            activeModel = modelBunny;
+            activeModel = modelSphere;
         }
 
         protected override void Update(GameTime gameTime)
@@ -90,6 +91,11 @@ namespace CookTorrance_RobDavis_411Final
                     Matrix.CreateRotationX(angle2) * Matrix.CreateRotationY(angle));
                 cameraTarget -= ViewRight * (Mouse.GetState().X - preMouse.X) / 10f;
                 cameraTarget += ViewUp * (Mouse.GetState().Y - preMouse.Y) / 10f;
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Keys.OemQuestion) && !preKey.IsKeyDown(Keys.OemQuestion))
+            {
+                showHelp = !showHelp;
             }
 
             if (Keyboard.GetState().IsKeyDown(Keys.R) && !preKey.IsKeyDown(Keys.R))
@@ -184,7 +190,7 @@ namespace CookTorrance_RobDavis_411Final
                 activeModel = modelTeacup;
             } else if (Keyboard.GetState().IsKeyDown(Keys.D3) && !preKey.IsKeyDown(Keys.D3))
             {
-                activeModel = modelTorus;
+                activeModel = modelSphere;
             } else if (Keyboard.GetState().IsKeyDown(Keys.D4) && !preKey.IsKeyDown(Keys.D4))
             {
                 activeModel = modelHeli;
@@ -288,17 +294,31 @@ namespace CookTorrance_RobDavis_411Final
             {
                 spriteBatch.DrawString(font, "Current Model: Teacup",
                     Vector2.UnitX + Vector2.UnitY * 156, Color.White);
-            } else if (activeModel == modelTorus)
+            } else if (activeModel == modelSphere)
             {
-                spriteBatch.DrawString(font, "Current Model: Torus",
+                spriteBatch.DrawString(font, "Current Model: Sphere",
                     Vector2.UnitX + Vector2.UnitY * 156, Color.White);
             }
 
-            /*
-            spriteBatch.DrawString(font, "Resilience: R / Shift and R", Vector2.UnitX + Vector2.UnitY * 174, Color.White);
-            spriteBatch.DrawString(font, "Age: A / Shift and A", Vector2.UnitX + Vector2.UnitY * 192, Color.White);
-            spriteBatch.DrawString(font, "Help: ?", Vector2.UnitX + Vector2.UnitY * 210, Color.White);
-            */
+            if (showHelp)
+            {
+                spriteBatch.DrawString(font, "Angle the camera: Drag Left Mouse", Vector2.UnitX + Vector2.UnitY * 176,
+                    Color.White);
+                spriteBatch.DrawString(font, "Zoom the camera: Drag Right Mouse", Vector2.UnitX + Vector2.UnitY * 194,
+                    Color.White);
+                spriteBatch.DrawString(font, "Pan the camera: Drag Middle Mouse", Vector2.UnitX + Vector2.UnitY * 212,
+                    Color.White);
+                spriteBatch.DrawString(font, "Rotate Light: Arrow Keys", Vector2.UnitX + Vector2.UnitY * 230,
+                    Color.White);
+                spriteBatch.DrawString(font, "Change Light Color: F2/F3/F4, Shift", Vector2.UnitX + Vector2.UnitY * 248,
+                    Color.White);
+                spriteBatch.DrawString(font, "Change Roughness: R/Shift and R", Vector2.UnitX + Vector2.UnitY * 266,
+                    Color.White);
+                spriteBatch.DrawString(font, "Change Model: 1/2/3/4", Vector2.UnitX + Vector2.UnitY * 284, Color.White);
+                spriteBatch.DrawString(font, "Change Incident Size: F/Shift and F", Vector2.UnitX + Vector2.UnitY * 302,
+                    Color.White);
+                spriteBatch.DrawString(font, "Help: ?", Vector2.UnitX + Vector2.UnitY * 320, Color.White);
+            }
             spriteBatch.End();
             base.Draw(gameTime);
         }
